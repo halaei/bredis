@@ -1,0 +1,42 @@
+# bredis queue driver for Laravel
+
+[![Build Status](https://travis-ci.org/halaei/bredis.svg)](https://travis-ci.org/halaei/bredis)
+[![Latest Stable Version](https://poser.pugx.org/halaei/bredis/v/stable)](https://packagist.org/packages/halaei/bredis)
+[![Total Downloads](https://poser.pugx.org/halaei/bredis/downloads)](https://packagist.org/packages/halaei/bredis)
+[![Latest Unstable Version](https://poser.pugx.org/halaei/bredis/v/unstable)](https://packagist.org/packages/halaei/bredis)
+[![License](https://poser.pugx.org/halaei/bredis/license)](https://packagist.org/packages/halaei/bredis)
+
+## When you need bredis
+
+You need `bredis` when all these applies:
+
+1. You choose Redis to serve your job queues.
+2. Multiple tasks can be pushed into the queues at the same time.
+3. You don't want them to be delayed if your workers are currently sleeping because they had no jobs to work on.
+4. You don't want to run `queue:work --sleep=0` on current Redis queue driver because it will devour your CPU resource.
+
+Hence you need your workers to wait for a job and process them just when they arrived. With `bredis` you can happily run `queue:work --sleep=0`. Your CPU will be happy as well.
+
+## Installation
+
+### 1. Install the package via compioser
+
+    composer require halaei/bredis
+    
+### 2. Add the service provider to your config/app.php
+
+    Halaei\BRedis\BlockingRedisServiceProvider::class
+
+### 3. Add bredis connections to app/queue.php
+
+    'bredis' => [
+        'driver'      => 'bredis',
+        'connection'  => 'default',
+        'queue'       => 'default',
+        'retry_after' => 90,
+        'timeout'     => 10, //Maximum seconds to wait for a job
+    ],
+
+Please note that if you need to increase 'timeout' in the config array above, you should increase 'retry_after' in the array as well as --timeout in your `queue:work` commands.
+
+**Warning**: bredis queue workers don't bother handling jobs that are delayed or reserved. So when using bredis workers, you have to have at least one redis worker as well.
