@@ -39,4 +39,5 @@ With `bredis` you can happily run `queue:work --sleep=0` without worrying about 
 Please note that if you need to increase 'timeout' in the config array above, you should increase 'retry_after' in the array as well as --timeout in your `queue:work` commands.
 
 **Warning**: bredis queue workers don't bother handling jobs that are delayed or reserved. So when using bredis workers, you have to have at least one redis worker as well.
+
 **Note**: bredis queue driver is 100% compatile with redis driver. In other words, you may push the jobs using redis driver and pop them using bredis.
