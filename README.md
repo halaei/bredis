@@ -6,16 +6,15 @@
 [![Latest Unstable Version](https://poser.pugx.org/halaei/bredis/v/unstable)](https://packagist.org/packages/halaei/bredis)
 [![License](https://poser.pugx.org/halaei/bredis/license)](https://packagist.org/packages/halaei/bredis)
 
-## When you need bredis
+## When do you need bredis?
 
-You need `bredis` when all these applies:
+You need `bredis` when all of these are applied:
 
-1. You choose Redis to serve your job queues.
-2. Multiple tasks can be pushed into the queues at the same time.
-3. You don't want them to be delayed if your workers are currently sleeping because they had no jobs to work on.
-4. You don't want to run `queue:work --sleep=0` on current Redis queue driver because it will devour your CPU resource.
+1. **You don't want your jobs to be delayed because your workers are currently sleeping.**
+2. You don't want to run `queue:work --sleep=0` on current Redis queue driver because it will devour your CPU when there is no job.
 
-Hence you need your workers to wait for a job and process them just when they arrived. With `bredis` you can happily run `queue:work --sleep=0`. Your CPU will be happy as well.
+Hence, you need your workers to idle-wait for a job and process them just when they arrive, with nearly no delay.
+With `bredis` you can happily run `queue:work --sleep=0` without worrying about busy waiting and CPU overload.
 
 ## Installation
 
@@ -40,3 +39,4 @@ Hence you need your workers to wait for a job and process them just when they ar
 Please note that if you need to increase 'timeout' in the config array above, you should increase 'retry_after' in the array as well as --timeout in your `queue:work` commands.
 
 **Warning**: bredis queue workers don't bother handling jobs that are delayed or reserved. So when using bredis workers, you have to have at least one redis worker as well.
+**Note**: bredis queue driver is 100% compatile with redis driver. In other words, you may push the jobs using redis driver and pop them using bredis.
