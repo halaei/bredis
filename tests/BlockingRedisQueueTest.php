@@ -2,65 +2,28 @@
 
 use Halaei\BRedis\BlockingRedisQueue;
 use Illuminate\Queue\Jobs\RedisJob;
+use Illuminate\Redis\RedisManager;
 use Illuminate\Support\Arr;
 use Mockery as m;
-use Illuminate\Redis\Database;
 use Illuminate\Container\Container;
 
 class BlockingRedisQueueTest extends PHPUnit_Framework_TestCase
 {
-    /**
-     * @var bool
-     */
-    private static $connectionFailedOnceWithDefaultsSkip = false;
-
-    /**
-     * @var Database
-     */
-    private $redis;
+    use InteractsWithRedis;
 
     public function setUp()
     {
         parent::setUp();
 
-        $host = getenv('REDIS_HOST') ?: '127.0.0.1';
-        $port = getenv('REDIS_PORT') ?: 6379;
-
-        if (static::$connectionFailedOnceWithDefaultsSkip) {
-            $this->markTestSkipped('Trying default host/port failed, please set environment variable REDIS_HOST & REDIS_PORT to enable '.__CLASS__);
-
-            return;
-        }
-
-        $this->redis = new Database([
-            'cluster' => false,
-            'default' => [
-                'host' => $host,
-                'port' => $port,
-                'database' => 5,
-                'timeout' => 0.5,
-            ],
-        ]);
-
-        try {
-            $this->redis->connection()->flushdb();
-        } catch (\Exception $e) {
-            if ($host === '127.0.0.1' && $port === 6379 && getenv('REDIS_HOST') === false) {
-                $this->markTestSkipped('Trying default host/port failed, please set environment variable REDIS_HOST & REDIS_PORT to enable '.__CLASS__);
-                static::$connectionFailedOnceWithDefaultsSkip = true;
-
-                return;
-            }
-        }
+        $this->setUpRedis();
     }
 
     public function tearDown()
     {
-        parent::tearDown();
+        $this->tearDownRedis();
         m::close();
-        if ($this->redis) {
-            $this->redis->connection()->flushdb();
-        }
+
+        parent::tearDown();
     }
 
     private function getQueue($timeout, $redis = null)
@@ -80,10 +43,11 @@ class BlockingRedisQueueTest extends PHPUnit_Framework_TestCase
     {
         $queue = $this->getQueue(0);
         $queue->push(new BlockingRedisQueueIntegrationTestJob(1));
+        /** @var RedisJob $job */
         $job = $queue->pop();
         $this->assertInstanceOf(RedisJob::class, $job);
         $this->assertEquals(1, $this->redis->connection()->zcard('queues:default:reserved'));
-        $this->assertEquals(2, Arr::get(json_decode($job->getReservedJob(), true), 'attempts'));
+        $this->assertEquals(1, Arr::get(json_decode($job->getReservedJob(), true), 'attempts'));
         $job->delete();
         $this->assertEquals(0, $this->redis->connection()->zcard('queues:default:reserved'));
         $this->assertEquals(0, $this->redis->connection()->zcard('queues:default:delayed'));
@@ -95,7 +59,7 @@ class BlockingRedisQueueTest extends PHPUnit_Framework_TestCase
         if (!pcntl_fork()) {
             $host = getenv('REDIS_HOST') ?: '127.0.0.1';
             $port = getenv('REDIS_PORT') ?: 6379;
-            $redis = new Database([
+            $redis = new RedisManager('predis', [
                 'cluster' => false,
                 'default' => [
                     'host' => $host,
@@ -104,6 +68,7 @@ class BlockingRedisQueueTest extends PHPUnit_Framework_TestCase
                     'timeout' => 0.5,
                 ],
             ]);
+
             $queue = $this->getQueue(0, $redis);
 
             sleep(1);

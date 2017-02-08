@@ -4,7 +4,7 @@ namespace Halaei\BRedis;
 
 use Illuminate\Queue\Jobs\RedisJob;
 use Illuminate\Queue\RedisQueue;
-use Illuminate\Redis\Database;
+use Illuminate\Contracts\Redis\Factory as Redis;
 
 class BlockingRedisQueue extends RedisQueue
 {
@@ -18,14 +18,14 @@ class BlockingRedisQueue extends RedisQueue
     /**
      * Create a new blocking Redis queue instance.
      *
-     * @param  \Illuminate\Redis\Database  $redis
+     * @param  Redis   $redis
      * @param  string  $default
      * @param  string  $connection
-     * @param  int  $expire
-     * @param  int  $timeout
+     * @param  int     $expire
+     * @param  int     $timeout
      * @return void
      */
-    public function __construct(Database $redis, $default = 'default', $connection = null, $expire = 60, $timeout = 10)
+    public function __construct(Redis $redis, $default = 'default', $connection = null, $expire = 60, $timeout = 10)
     {
         parent::__construct($redis, $default, $connection, $expire);
         $this->timeout = $timeout;
@@ -46,9 +46,13 @@ class BlockingRedisQueue extends RedisQueue
             $payload['attempts']++;
             $reserved = json_encode($payload);
             $this->getConnection()->zadd($this->getQueue($queue).':reserved', [
-                $reserved => $this->getTime() + $this->expire
+                $reserved => $this->availableAt($this->retryAfter)
             ]);
-            return new RedisJob($this->container, $this, $rawBody[1], $reserved, $queue ?: $this->default);
+
+            return new RedisJob(
+                $this->container, $this, $rawBody[1],
+                $reserved, $this->connectionName, $queue ?: $this->default
+            );
         }
     }
 }
