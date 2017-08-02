@@ -7,7 +7,7 @@ use Illuminate\Support\Arr;
 use Mockery as m;
 use Illuminate\Container\Container;
 
-class BlockingRedisQueueTest extends PHPUnit_Framework_TestCase
+class BlockingRedisQueueTest extends \PHPUnit\Framework\TestCase
 {
     use InteractsWithRedis;
 
