@@ -13,6 +13,7 @@ class HorizonServiceProvider extends \Laravel\Horizon\HorizonServiceProvider
      */
     protected function registerQueueConnectors()
     {
+        parent::registerQueueConnectors();
         $this->app->resolving(QueueManager::class, function ($manager) {
             $manager->addConnector('bredis', function () {
                 return new HorizonBlockingRedisConnector($this->app['redis']);
