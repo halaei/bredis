@@ -9,12 +9,6 @@
       "email": "hamid@opilo.com"
     }
   ],
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "git@github.com:illuminate/support.git"
-    }
-  ],
   "require": {
     "php": ">=7.0.0",
     "illuminate/queue": "dev-master",
@@ -35,5 +29,6 @@
       "tests/InteractsWithRedis.php"
     ]
   },
-  "minimum-stability": "dev"
+  "minimum-stability": "dev",
+  "prefer-stable": true
 }
